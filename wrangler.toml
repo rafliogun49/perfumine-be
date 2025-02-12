@@ -1,0 +1,16 @@
+name="my_app"
+main="src/index.ts"
+compatibility_date="2024-11-11"
+
+[vars]
+ACCOUNT_ID="d5e1a6fb9a5dfb1763222ddd09a5c319"
+D1_DATABASE_ID="de721d45-d7aa-479c-804d-fc64f54af05d"
+INDEX_NAME="perfume_index"
+EMAIL="rafliogun49@gmail.com"
+
+D1_DATABASE_URL="https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query"
+VECTORIZER_URL="https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/vectorize/v2/indexes/${INDEX_NAME}/vectors"
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
