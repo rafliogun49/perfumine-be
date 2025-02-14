@@ -55,7 +55,7 @@ app.post('/recommend-perfume', async (c: Context<{ Bindings: Env }>) => {
     // 🔹 Step 4: Fetch Perfume Details
     const perfumeDetails = await fetchPerfumeDetails(topPerfumes, c.env)
 
-    await saveUserResponse(c, name, email, userAnswers, insight, topPerfumes)
+    await saveUserResponse(c.env, name, email, userAnswers, insight, topPerfumes)
     
     return c.json({
       insight,
@@ -130,7 +130,7 @@ async function searchPerfumes(queryVector: string[], env: Env) {
   try {
     const response = await axios.post(
       `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/vectorize/v2/indexes/perfume_index/query`,
-      { vector: queryVector, topK: 5 },
+      { vector: queryVector, topK: 10 },
       {
         headers: {
           'X-Auth-Email': env.EMAIL,
@@ -174,11 +174,9 @@ async function fetchPerfumeDetails(perfumeIds: string[], env: Env) {
   }
 }
 
-async function saveUserResponse(c: Context<{ Bindings: Env }>, name: string, email: string, userAnswers: any, insight:{characteristics:string, ideal_scent:string, persona:string, query:string}, topPerfumes: string[]) {
+async function saveUserResponse(env: Env, name: string, email: string, userAnswers: any, insight:{characteristics:string, ideal_scent:string, persona:string, query:string}, topPerfumes: string[]) {
   try {
-    if(!name || !email) {
-      return c.json({ error: 'Nama dan email harus diisi.' }, 400)
-    }
+    
     const stmt = `
       INSERT INTO user_responses (name, email, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, characteristics, ideal_scent, persona, query, recommendations)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -205,12 +203,12 @@ async function saveUserResponse(c: Context<{ Bindings: Env }>, name: string, ema
     ];
 
     const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/accounts/${c.env.ACCOUNT_ID}/d1/database/${c.env.D1_DATABASE_ID}/query`,
+      `https://api.cloudflare.com/client/v4/accounts/${env.ACCOUNT_ID}/d1/database/${env.D1_DATABASE_ID}/query`,
       { sql: stmt, params },
       {
         headers: {
-          'X-Auth-Email': c.env.EMAIL,
-          'X-Auth-Key': c.env.CLOUDFLARE_API_KEY,
+          'X-Auth-Email': env.EMAIL,
+          'X-Auth-Key': env.CLOUDFLARE_API_KEY,
           'Content-Type': 'application/json'
         }
       }
@@ -222,7 +220,6 @@ async function saveUserResponse(c: Context<{ Bindings: Env }>, name: string, ema
     }
   } catch (error) {
     console.error('❌ Error:', error.message)
-    return c.json({ error: 'Terjadi kesalahan saat menyimpan jawaban user.' }, 500)
   }
 }
 
@@ -254,7 +251,7 @@ Berdasarkan jawaban ${answers.name} terhadap preferensi parfum:
   "characteristics": "Gambaran singkat tentang kepribadian ${answers.name}... max 225 karakter",
   "ideal_scent": "Deskripsi tentang parfum dan notes-notes yang mungkin cocok... max 300 karakter",
   "persona": "Satu kata yang menggambarkan ${answers.name}",
-  "query": "Query singkat berbahasa indonesia untuk pencarian parfum"
+  "query": "Query singkat berbahasa indonesia untuk parfum yang tepat bagi user"
 }
   `
 }
